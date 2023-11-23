@@ -1,0 +1,28 @@
+{% extends 'rango/base.html' %}
+{% load staticfiles %}
+
+{% block title %}
+    About
+{% endblock %}
+
+{% block body_block %}
+    <div>
+        <h1 class="page-header">About Page</h1>
+        This tutorial has been put together by Gio
+    </div>
+    <p>
+    <img src="{% static "images/rango.jpg" %}" alt="Picture of Rango">
+    <p>
+        <img src="{{ MEDIA_URL }}cat.jpg" alt="Picture of a Cat">
+    </p>
+    <button class="btn btn-primary" onclick="alert('You clicked the button using JavaScript');">
+        Click Me - I run Javascript
+    </button>
+
+    <button class="btn btn-primary" id="about-btn">
+        Click Me - I'm JavaScript on Speed
+    </button>
+    <p>This is an example</p>
+    <p>This is another example</p>
+    <div id="msg">Hello - I'm here for a JQuery Example too</div>
+{% endblock %}
