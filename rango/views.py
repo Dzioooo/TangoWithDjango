@@ -1,18 +1,19 @@
 from datetime import datetime
 
-from django.http import HttpResponse
-from django.http import HttpResponseRedirect
-from django.shortcuts import render
-
-from rango.models import Category, Page, UserProfile
-from rango.forms import CategoryForm, PageForm, UserForm, UserProfileForm
-from django.contrib.auth import authenticate, login, logout
-from django.core.urlresolvers import reverse
+from django.contrib.auth import authenticate
+from django.contrib.auth import login
+from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
-from rango.google_search import run_query
-from django.shortcuts import redirect
-from registration.backends.simple.views import RegistrationView
 from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse
+from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import redirect, render
+
+from rango.forms import CategoryForm, PageForm, UserForm, UserProfileForm
+from rango.google_search import run_query
+from rango.models import Category, Page, UserProfile
+from registration.backends.simple.views import RegistrationView
+
 
 
 def index(request):
@@ -202,7 +203,15 @@ def profile(request, username):
     except User.DoesNotExist:
         return redirect('index')
     
+    
     userprofile = UserProfile.objects.get_or_create(user=user)[0]
+
+    liked_categories = userprofile.liked_categories.all()
+    liked_categories_names = [category_list.name for category_list in 
+                              liked_categories]
+    category_names = ', '.join(liked_categories_names)
+    print(category_names)
+
     form = UserProfileForm({
         'website': userprofile.website,
         'picture': userprofile.picture
@@ -219,7 +228,9 @@ def profile(request, username):
     
     return render(request, 'rango/profile.html', {'userprofile': userprofile,
                                                   'selecteduser': user,
-                                                  'form': form})
+                                                  'form': form,
+                                                  'categories': 
+                                                  liked_categories})
 
 class MyRegistrationView(RegistrationView):
     def get_success_url(self, user):

@@ -1,7 +1,6 @@
+from django.contrib.auth.models import User
 from django.db import models
 from django.template.defaultfilters import slugify
-from django.contrib.auth.models import User
-
 
 class Category(models.Model):
     name = models.CharField(max_length=128, unique=True)
@@ -35,6 +34,7 @@ class Page(models.Model):
 class UserProfile(models.Model):
     # Links UserProfile model to User Model instance
     user = models.OneToOneField(User)
+    liked_categories = models.ManyToManyField(Category, blank=True)
 
     # Additional attributes to include
     website = models.URLField(blank=True)

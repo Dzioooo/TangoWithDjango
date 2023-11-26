@@ -1,29 +1,34 @@
-from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
+from django.shortcuts import render
+
 from rango.models import Category
 from rango.models import Page
-from django.shortcuts import render
-from django.shortcuts import redirect
-from rango.views import add_page
-
 
 
 @login_required
 def like_category(request):
-    print("testing")
+    print("test")
     cat_id = None
-    print("testing 1")
     if request.method == 'GET':
         cat_id = request.GET['category_id']
+        user_id = request.GET['user_id']
+        print("test 1")
     likes = 0
 
-    if cat_id:
+    if cat_id and user_id:
+        print("test 2")
         cat = Category.objects.get(id=int(cat_id))
+        user = request.user.userprofile
+        print("test 3")
         if cat:
+            user.liked_categories.add(cat)
+            print("liked", user.liked_categories)
             likes = cat.likes + 1
             cat.likes = likes
-            print("catlikes", cat.likes)
+            print(user.liked_categories)
             cat.save()
+
     return HttpResponse(likes)
 
 def get_category_list(max_results=0, starts_with=None):
