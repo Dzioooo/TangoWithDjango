@@ -13,8 +13,9 @@
                 <strong id="like_count">{{ category.likes }}</strong>
                 people like this category
 
-                {% if user.is_authenticated %}
+                {% if user.is_authenticated and category not in user.userprofile.liked_categories.all %}
                     <button id="likes" data-catid="{{ category.id }}"
+                        data-userid="{{ user.id }}"
                         class="btn btn-primary btn-sm" type="button">
                         Like
                     </button>

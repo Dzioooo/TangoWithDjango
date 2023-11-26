@@ -1,9 +1,11 @@
 $(document).ready(function() {
     $('#likes').click(function() {
         var catid;
+        var userid;
         catid = $(this).attr("data-catid");
-        console.log("catid", catid)
-		$.get('/rango/like/', {category_id: catid}, function(data){
+        userid = $(this).attr("data-userid");
+        console.log("catid", userid)
+		$.get('/rango/like/', {category_id: catid, user_id: userid}, function(data){
             $('#like_count').html(data); //puts the data in id like_count
             $('#likes').hide();
         });
