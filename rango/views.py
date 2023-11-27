@@ -6,12 +6,19 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import redirect, render
+from django.http import HttpResponse
+from django.http import HttpResponseRedirect
+from django.shortcuts import redirect
+from django.shortcuts import render
 
-from rango.forms import CategoryForm, PageForm, UserForm, UserProfileForm
+from rango.forms import CategoryForm
+from rango.forms import PageForm
+from rango.forms import UserForm
+from rango.forms import UserProfileForm
 from rango.google_search import run_query
-from rango.models import Category, Page, UserProfile
+from rango.models import Category
+from rango.models import Page
+from rango.models import UserProfile
 from registration.backends.simple.views import RegistrationView
 
 
@@ -51,23 +58,40 @@ def show_category(request, category_name_slug):
 
         pages = Page.objects.filter(category=category).order_by(
             '-views')
+        page_list = Page.objects.filter(category=category)
+        page_title = []
+        page_url = []
 
-        context_dict['pages'] = pages
-        context_dict['category'] = category
+        for page in page_list:
+            page_title.append(page.title)
+            page_url.append(page.url)
     except Category.DoesNotExist:
         context_dict['category'] = None
         context_dict['pages'] = None
-    
-    context_dict['query'] = category.name
+
     result_list = []
+
     if request.method == 'POST':
         query = request.POST['query'].strip()
-
         if query:
             result_list = run_query(query)
             context_dict['query'] = query
             context_dict['result_list'] = result_list
-            
+
+    result_title = []
+    result_url = []
+    for result in result_list:
+        result_title.append(result['title'])
+        result_url.append(result['link'])
+
+    context_dict['page_list'] = page_list
+    context_dict['pages'] = pages
+    context_dict['category'] = category
+    context_dict['query'] = category.name
+    context_dict['page_url'] = page_url
+    context_dict['page_title'] = page_title
+    context_dict['result_url'] = result_url
+    context_dict['result_title'] = result_title
     return render(request, 'rango/category.html', context_dict)
 
 
@@ -106,7 +130,7 @@ def add_page(request, category_name_slug):
     if request.method == 'POST':
         form = PageForm(request.POST)
         if form.is_valid():
-            if category: # checks if cateogry is not None
+            if category:
                 """ access the form object's properties for 
                 customization """
                 page = form.save(commit=False) 
@@ -199,18 +223,16 @@ def register_profile(request):
 def profile(request, username):
     try:
         user = User.objects.get(username=username)
-        print(username)
     except User.DoesNotExist:
         return redirect('index')
-    
     
     userprofile = UserProfile.objects.get_or_create(user=user)[0]
 
     liked_categories = userprofile.liked_categories.all()
-    liked_categories_names = [category_list.name for category_list in 
-                              liked_categories]
-    category_names = ', '.join(liked_categories_names)
-    print(category_names)
+    created_pages = Page.objects.filter(added_by=userprofile.user)
+    
+    for page in created_pages:
+        print(page.category)
 
     form = UserProfileForm({
         'website': userprofile.website,
@@ -230,7 +252,8 @@ def profile(request, username):
                                                   'selecteduser': user,
                                                   'form': form,
                                                   'categories': 
-                                                  liked_categories})
+                                                  liked_categories,
+                                                  'pages': created_pages})
 
 class MyRegistrationView(RegistrationView):
     def get_success_url(self, user):
@@ -271,9 +294,6 @@ def search(request):
 
         if query:
             result_list = run_query(query)
-    
-    print("query", query)
-
     context_dict = {'result_list': result_list, 'query': query}
 
     return render(request, 'rango/search.html', context_dict)
@@ -285,7 +305,6 @@ def track_url(request):
     if request.method == 'GET':
         if 'page_id' in request.GET:
             page_id = request.GET['page_id']
-            print("page_id", page_id)
 
             try:
                 page = Page.objects.get(id=page_id)

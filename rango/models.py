@@ -27,6 +27,8 @@ class Page(models.Model):
     title = models.CharField(max_length=128)
     url = models.URLField()
     views = models.IntegerField(default=0)
+    added_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, 
+                                 blank=True)
 
     def __str__(self):
         return self.title

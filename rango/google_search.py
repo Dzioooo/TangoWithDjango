@@ -18,7 +18,7 @@ def run_query(search_terms):
     api_key, search_engine_id = read_webhose_key()
 
     if not api_key and not search_engine_id:
-        raise KeyError('Webhose key not found')
+        raise KeyError('API key not found')
     
     root_url = 'https://www.googleapis.com/customsearch/v1'
 
