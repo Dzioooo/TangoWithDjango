@@ -38,6 +38,7 @@
             <ul class="list-group">
             {% for page in pages %}
                 <li class="list-group-item">
+                    {{page.category.name}} -
                     <a href="{{ page.url }}">{{ page.title }}</a>
                 </li>
             {% endfor %}
