@@ -8,25 +8,19 @@ from rango.models import Page
 
 @login_required
 def like_category(request):
-    print("test")
     cat_id = None
-    if request.method == 'GET':
-        cat_id = request.GET['category_id']
-        user_id = request.GET['user_id']
-        print("test 1")
     likes = 0
 
-    if cat_id and user_id:
-        print("test 2")
+    if request.method == 'GET':
+        cat_id = request.GET['category_id']
+
+    if cat_id:
         cat = Category.objects.get(id=int(cat_id))
         user = request.user.userprofile
-        print("test 3")
         if cat:
             user.liked_categories.add(cat)
-            print("liked", user.liked_categories)
             likes = cat.likes + 1
             cat.likes = likes
-            print(user.liked_categories)
             cat.save()
 
     return HttpResponse(likes)
@@ -69,8 +63,9 @@ def auto_add_page(request):
         title = request.GET['title']
         if cat_id:
             category = Category.objects.get(id=int(cat_id))
+            added_by = request.user
             p = Page.objects.get_or_create(category=category, title=title, 
-                                           url=url)
+                                           url=url, added_by=added_by)
             pages = Page.objects.filter(category=category).order_by('-views')
             context_dict['pages'] = pages
     return render(request, 'rango/page_list.html', context_dict)
