@@ -5,7 +5,7 @@ from django.contrib.auth import login
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect
@@ -22,7 +22,6 @@ from rango.models import UserProfile
 from registration.backends.simple.views import RegistrationView
 
 
-
 def index(request):
     """
     renders index.html which then displays top 5 categories with
@@ -32,6 +31,7 @@ def index(request):
     page_list = Page.objects.order_by('-views')[:5]
     context_dict = {'categories': category_list, 'pages': page_list}
     return render(request, 'rango/index.html', context=context_dict)
+
 
 def about(request):
     """
@@ -48,7 +48,7 @@ def show_category(request, category_name_slug):
     properties from the Category model and checks if a slug property
     matche the category_name_slug parameter
 
-    category and pages objects will then be stored into the 
+    category and pages objects will then be stored into the
     context_dict variable
     """
     context_dict = {}
@@ -116,9 +116,9 @@ def add_category(request):
 def add_page(request, category_name_slug):
     """
     renders the add_page.html. this function creates a new category
-    object from the PageForm model, it accepts the 
+    object from the PageForm model, it accepts the
     category_name_slug which will be compared to all category objects
-    to find the category object that has the same slug property of the 
+    to find the category object that has the same slug property of the
     model.
     """
     try:
@@ -131,9 +131,9 @@ def add_page(request, category_name_slug):
         form = PageForm(request.POST)
         if form.is_valid():
             if category:
-                """ access the form object's properties for 
+                """ access the form object's properties for
                 customization """
-                page = form.save(commit=False) 
+                page = form.save(commit=False)
                 page.category = category
                 page.views = 0
                 page.save()
@@ -142,6 +142,7 @@ def add_page(request, category_name_slug):
             print(form.errors)
     context_dict = {'form': form, 'category': category}
     return render(request, 'rango/add_page.html', context_dict)
+
 
 def register(request):
     registered = False
@@ -153,7 +154,7 @@ def register(request):
         if user_form.is_valid() and profile_form.is_valid():
             user = user_form.save()
             # .set_password built-in function
-            user.set_password(user.password) 
+            user.set_password(user.password)
             user.save()
 
             profile = profile_form.save(commit=False)
@@ -174,6 +175,7 @@ def register(request):
                     'registered': registered}
     return render(request, 'rango/register.html/', context_dict)
 
+
 def user_login(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -188,19 +190,23 @@ def user_login(request):
             else:
                 return HttpResponseRedirect("Your Rango account is disabled")
         else:
-            print("Invalid login details: {0}, {1}", format(username, password))
+            print("Invalid login details: {0}, {1}", format(username,
+                                                            password))
             return HttpResponse("Invalid login details supplied")
     else:
         return render(request, 'rango/login.html', {})
+
 
 @login_required
 def restricted(request):
     return HttpResponse("Since you're logged in, you can see this text!")
 
+
 @login_required
 def user_logout(request):
     logout(request)
     return HttpResponseRedirect(reverse('index'))
+
 
 @login_required
 def register_profile(request):
@@ -219,18 +225,19 @@ def register_profile(request):
     context_dict = {'form': form}
     return render(request, 'rango/profile_registration.html', context_dict)
 
+
 @login_required
 def profile(request, username):
     try:
         user = User.objects.get(username=username)
     except User.DoesNotExist:
         return redirect('index')
-    
+
     userprofile = UserProfile.objects.get_or_create(user=user)[0]
 
     liked_categories = userprofile.liked_categories.all()
     created_pages = Page.objects.filter(added_by=userprofile.user)
-    
+
     for page in created_pages:
         print(page.category)
 
@@ -240,24 +247,26 @@ def profile(request, username):
     })
 
     if request.method == 'POST':
-        form = UserProfileForm(request.POST, request.FILES, 
+        form = UserProfileForm(request.POST, request.FILES,
                                instance=userprofile)
         if form.is_valid():
             form.save(commit=True)
             return redirect('profile', user.username)
         else:
             print(form.errors)
-    
+
     return render(request, 'rango/profile.html', {'userprofile': userprofile,
                                                   'selecteduser': user,
                                                   'form': form,
-                                                  'categories': 
+                                                  'categories':
                                                   liked_categories,
                                                   'pages': created_pages})
+
 
 class MyRegistrationView(RegistrationView):
     def get_success_url(self, user):
         return reverse('register_profile')
+
 
 #  helper functions
 def get_server_side_cookie(request, cookie, default_val=None):
@@ -266,6 +275,7 @@ def get_server_side_cookie(request, cookie, default_val=None):
     if not val:
         val = default_val
     return val
+
 
 def visitor_cookie_handler(request):
     visits = int(get_server_side_cookie(request, 'visits', '1'))
@@ -276,7 +286,6 @@ def visitor_cookie_handler(request):
     last_visit_time = datetime.strptime(last_visit_cookie[:-7],
                                         '%Y-%m-%d %H:%M:%S')
 
-
     if (datetime.now() - last_visit_time).days > 0:
         visits = visits + 1
         request.session['last_visit'] = str(datetime.now())
@@ -284,6 +293,7 @@ def visitor_cookie_handler(request):
         request.session['last_visit'] = last_visit_cookie
 
     request.session['visits'] = visits
+
 
 def search(request):
     result_list = []
@@ -298,6 +308,7 @@ def search(request):
 
     return render(request, 'rango/search.html', context_dict)
 
+
 def track_url(request):
     page_id = None
     url = '/rango/'
@@ -311,12 +322,13 @@ def track_url(request):
                 page.views = page.views + 1
                 page.save()
                 url = page.url
-            except:
+            except Exception:
                 pass
     return redirect(url)
+
 
 def list_profiles(request):
     userprofile_list = UserProfile.objects.all()
 
-    return render(request, 'rango/list_profiles.html', 
+    return render(request, 'rango/list_profiles.html',
                   {'userprofile_list': userprofile_list})
