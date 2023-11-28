@@ -69,6 +69,7 @@ def auto_add_page(request):
             added_by = request.user
             p = Page.objects.get_or_create(category=category, title=title,
                                            url=url, added_by=added_by)
+            print(p)
             pages = Page.objects.filter(category=category).order_by('-views')
             context_dict['pages'] = pages
     return render(request, 'rango/page_list.html', context_dict)

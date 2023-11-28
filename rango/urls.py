@@ -1,34 +1,26 @@
-from django.conf.urls import url
+from django.urls import path
 
 from rango import views
 from rango import views_ajax
 
 urlpatterns = [
-    url(r'^$', views.index, name='index'),
-    url(r'^about/$', views.about, name='about'),
-    url(r'^add_category/$', views.add_category, name='add_category'),
-    url(r'^category/(?P<category_name_slug>[\w\-]+)/$', views.show_category,
-        name='show_category'),
-    url(r'^category/(?P<category_name_slug>[\w\-]+)/add_page/$',
-        views.add_page, name='add_page'),
-    url(r'^register/$', views.register, name='register'),
-    url(r'^login/$', views.user_login, name='login'),
-    url(r'^logout/$', views.user_logout, name='logout'),
-    url(r'^restricted/$', views.restricted, name='restricted'),
-    url(r'^search/$', views.search, name='search'),
-    url(r'^goto/$', views.track_url, name='goto'),
-    url(r'^register_profile/$', views.register_profile,
-        name='register_profile'),
-    url(r'^profile/(?P<username>[\w-]+)/$', views.profile, name='profile'),
-    url(r'^profiles/$', views.list_profiles, name='list_profiles'),
-    url(r'like/$', views_ajax.like_category, name='like_category'),
-    url(r'^suggest/$', views_ajax.suggest_category, name='suggest_category'),
-    url(r'^add/$', views_ajax.auto_add_page, name='auto_add_page'),
+    path('', views.index, name='index'),
+    path('about/', views.about, name='about'),
+    path('add_category/', views.add_category, name='add_category'),
+    path('category/<slug:category_name_slug>/', views.show_category,
+         name='show_category'),
+    path('category/<slug:category_name_slug>/add_page/', views.add_page,
+         name='add_page'),
+    path('register/', views.register, name='register'),
+    path('login/', views.user_login, name='login'),
+    path('logout/', views.user_logout, name='logout'),
+    path('restricted/', views.restricted, name='restricted'),
+    path('search/', views.search, name='search'),
+    path('goto/', views.track_url, name='goto'),
+    path('register_profile/', views.register_profile, name='register_profile'),
+    path('profile/<str:username>/', views.profile, name='profile'),
+    path('profiles/', views.list_profiles, name='list_profiles'),
+    path('like/', views_ajax.like_category, name='like_category'),
+    path('suggest/', views_ajax.suggest_category, name='suggest_category'),
+    path('add/', views_ajax.auto_add_page, name='auto_add_page'),
 ]
-
-
-"""
-url syntax: (r'^url_path/parameter)', function, name=''
-parameter syntax: (?P<parameter_name>[\w\-]+/$')
-name='' for referencing if called from html
-"""
