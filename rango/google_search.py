@@ -41,7 +41,7 @@ def run_query(search_terms):
         for item in json_response.get('items'):
             results.append({'title': item['title'],
                             'link': item['link'],
-                            'snippet': item['snippet']})
+                            'snippet': item['snippet']})   
     except requests.exceptions.RequestException as e:
         print(e)
 

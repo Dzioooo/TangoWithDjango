@@ -12,5 +12,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/register/', views.MyRegistrationView.as_view(),
          name='registration_register'),
+    path('accounts/login/', views.CustomLoginView.as_view(), 
+         name='custom_login'),
     path('accounts/', include('registration.backends.simple.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
