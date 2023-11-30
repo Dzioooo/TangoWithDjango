@@ -14,7 +14,6 @@ from django.contrib import messages
 
 from rango.forms import CategoryForm
 from rango.forms import PageForm
-from rango.forms import UserForm
 from rango.forms import UserProfileForm
 from rango.google_search import run_query
 from rango.models import Category
@@ -24,6 +23,7 @@ from registration.backends.simple.views import RegistrationView
 from django.contrib.auth.views import LoginView
 from django.views import View
 from django.db.utils import IntegrityError
+from django.utils.decorators import method_decorator
 
 class IndexView(View):
     def get(self, request, *args, **kwargs):
@@ -33,15 +33,15 @@ class IndexView(View):
 
         context_dict = {'categories': category_list,
                         'pages': page_list}
-        
+
         return render(request, 'rango/index.html', context=context_dict)
-   
+
 class AboutView(View):
     def get(self, request, *args, **kwargs):
         context_dict = {}
 
         return render(request, 'rango/about.html', context=context_dict)
-    
+
 class ShowCategoryView(View):
     def get_context_dict(self, category, pages, results=None):
         if results:
@@ -67,18 +67,18 @@ class ShowCategoryView(View):
 
             context_dict.update(self.get_context_dict(category, pages))
         except Category.DoesNotExist:
-            context_dict = {'category': None, 
+            context_dict = {'category': None,
                             'pages': None}
-        
+
         return render(request, 'rango/category.html', context=context_dict)
-    
+
     def post(self, request, category_name_slug, *args, **kwargs):
         context_dict = {}
         results = []
 
         try:
             category = Category.objects.get(slug=category_name_slug)
-            pages = Page.objects.filter(category=category).order_by('-views')            
+            pages = Page.objects.filter(category=category).order_by('-views')
 
             if 'query' in request.POST:
                 query = request.POST['query'].strip()
@@ -89,17 +89,17 @@ class ShowCategoryView(View):
 
             context_dict.update(self.get_context_dict(category, pages, results))
         except Category.DoesNotExist:
-            context_dict = {'category': None, 
+            context_dict = {'category': None,
                             'pages': None}
 
         return render(request, 'rango/category.html', context=context_dict)
-    
+
 class AddCategoryView(View):
     def get(self, request, *args, **kwargs):
         form = CategoryForm()
         context_dict = {'form': form}
         return render(request, 'rango/add_category.html', context=context_dict)
-    
+
     def post(self, request, *args, **kwargs):
         try:
             form = CategoryForm(request.POST)
@@ -109,7 +109,7 @@ class AddCategoryView(View):
                 return redirect('index')
             else:
                 print(form.errors)
-            
+
             return render(request, 'rango/add_category.html', {'form': form})
         except IntegrityError as e:
             print(f"Integrity Error: {e}")
@@ -127,16 +127,16 @@ class AddPageView(View):
         except Category.DoesNotExist:
             category = None
             form = None
-        
+
         context_dict = {'form': form, 'category': category}
         return render(request, 'rango/add_page.html', context=context_dict)
-    
+
     def post(self, request, category_name_slug, *args, **kwargs):
-        try: 
+        try:
             category = self.check_category(category_name_slug)
         except Category.DoesNotExist:
             category = None
-        
+
         form = PageForm(request.POST)
 
         if form.is_valid():
@@ -149,81 +149,33 @@ class AddPageView(View):
             return redirect('show_category', category_name_slug)
         else:
             print(form.errors)
-        
+
         context_dict = {'form': form, 'category': category}
         return render(request, 'rango/add_page.html', context_dict)
 
 
-def register(request):
-    registered = False
-
-    if request.method == 'POST':
-        user_form = UserForm(data=request.POST)
-        profile_form = UserProfileForm(data=request.POST)
-
-        if user_form.is_valid() and profile_form.is_valid():
-            user = user_form.save()
-            # .set_password built-in function
-            user.set_password(user.password)
-            user.save()
-
-            profile = profile_form.save(commit=False)
-            profile.user = user
-
-            if 'picture' in request.FILES:
-                profile.picture = request.FILES['picture']
-            profile.save()
-            registered = True
-        else:
-            print(user_form.errors, profile_form.errors)
-    else:
-        user_form = UserForm()
-        profile_form = UserProfileForm()
-
-    context_dict = {'user_form': user_form,
-                    'profile_form': profile_form,
-                    'registered': registered}
-    return render(request, 'rango/register.html/', context_dict)
+@method_decorator(login_required, name='dispatch')
+class RestrictedView(View):
+    def get(self, request, *args, **kwargs):
+        return HttpResponse("Since you're logged in, you can see this text!")
 
 
-def user_login(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+@method_decorator(login_required, name='dispatch')
+class UserLogoutView(View):
+    def get(self, request, *args, **kwargs):
+        logout(request)
+        return HttpResponseRedirect(reverse('index'))
 
-        user = authenticate(username=username, password=password)
+@method_decorator(login_required, name='dispatch')
+class RegisterProfileView(View):
+    def get(self, request, *args, **kwargs):
+        form = UserProfileForm()
+        context_dict = {'form': form}
+        return render(request, 'rango/profile_registration.html', context_dict)
 
-        if user:
-            if user.is_active:
-                login(request, user)
-                return HttpResponseRedirect(reverse('index'))
-            else:
-                return HttpResponseRedirect("Your Rango account is disabled")
-        else:
-            print("Invalid login details: {0}, {1}", format(username,
-                                                            password))
-            return HttpResponse("Invalid login details supplied")
-    else:
-        return render(request, 'rango/login.html', {})
-
-
-@login_required
-def restricted(request):
-    return HttpResponse("Since you're logged in, you can see this text!")
-
-
-@login_required
-def user_logout(request):
-    logout(request)
-    return HttpResponseRedirect(reverse('index'))
-
-
-@login_required
-def register_profile(request):
-    form = UserProfileForm()
-
-    if request.method == 'POST':
+    def post(self, request, *args, **kwargs):
         form = UserProfileForm(request.POST, request.FILES)
+
         if form.is_valid():
             user_profile = form.save(commit=False)
             user_profile.user = request.user
@@ -232,8 +184,58 @@ def register_profile(request):
             return redirect('index')
         else:
             print(form.errors)
-    context_dict = {'form': form}
-    return render(request, 'rango/profile_registration.html', context_dict)
+
+        context_dict = {'form': form}
+        return render(request, 'rango/profile_registration.html', context_dict)
+
+@method_decorator(login_required, name='dispatch')
+class ProfileView(View):
+    def get_user(self, username):
+        user = User.objects.get(username=username)
+        userprofile = UserProfile.objects.get_or_create(user=user)[0]
+
+        return user, userprofile
+
+    def get_context_dict(self, user, userprofile):
+        form = UserProfileForm({
+                'website': userprofile.website,
+                'picture': userprofile.picture
+            })
+        return {
+            'userprofile': userprofile,
+            'selecteduser': user,
+            'form': form,
+            'categories': userprofile.liked_categories.all(),
+            'created_pages': Page.objects.filter(added_by=userprofile.user)
+        }
+
+    def get(self, request, username, *args, **kwargs):
+        try:
+            context_dict = {}
+            user, userprofile = self.get_user(username)
+            
+            context_dict.update(self.get_context_dict(user, userprofile))
+            return render(request, 'rango/profile.html', context=context_dict)
+        except User.DoesNotExist:
+            return redirect('index')
+
+    def post(self, request, username, *args, **kwargs):
+        try:
+            context_dict = {}
+            user, userprofile = self.get_user(username)
+
+            form = UserProfileForm(request.POST, request.FILES,
+                                   instance=userprofile)
+
+            if form.is_valid():
+                form.save(commit=True)
+                context_dict.update(self.get_context_dict(user, userprofile))
+                return redirect('profile', user.username)
+            else:
+                print(form.errors)
+            return render(request, 'rango/profile.html', context=context_dict)
+        except User.DoesNotExist:
+            return redirect('index')
 
 
 @login_required
@@ -244,6 +246,8 @@ def profile(request, username):
         return redirect('index')
 
     userprofile = UserProfile.objects.get_or_create(user=user)[0]
+    print(userprofile.website)
+
 
     liked_categories = userprofile.liked_categories.all()
     created_pages = Page.objects.filter(added_by=userprofile.user)
@@ -284,7 +288,7 @@ class CustomLoginView(LoginView):
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
-    
+
     def form_invalid(self, form):
         messages.error(self.request, 'Invalid username or password.')
         return self.render_to_response(self.get_context_data(form=form))
