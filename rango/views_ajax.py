@@ -1,29 +1,30 @@
 from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 from django.http import HttpResponse
 from django.shortcuts import render
+from django.views import View
 
 from rango.models import Category
 from rango.models import Page
 
-
-@login_required
-def like_category(request):
+@method_decorator(login_required, name='dispatch')
+class LikeCategoryView(View):
     cat_id = None
     likes = 0
 
-    if request.method == 'GET':
-        cat_id = request.GET['category_id']
+    def get(self, request, *args, **kwargs):
+        self.cat_id = request.GET.get('category_id')
+        
+        if self.cat_id:
+            cat = Category.objects.get(id=int(self.cat_id))
+            user = request.user.userprofile
 
-    if cat_id:
-        cat = Category.objects.get(id=int(cat_id))
-        user = request.user.userprofile
-        if cat:
-            user.liked_categories.add(cat)
-            likes = cat.likes + 1
-            cat.likes = likes
-            cat.save()
-
-    return HttpResponse(likes)
+            if cat:
+                user.liked_categories.add(cat)
+                self.likes = cat.likes + 1
+                cat.likes = self.likes
+                cat.save()
+        return HttpResponse(self.likes)
 
 
 def get_category_list(max_results=0, starts_with=None):
