@@ -10,6 +10,7 @@ from rango.models import Page
 
 @method_decorator(login_required, name='dispatch')
 class LikeCategoryView(View):
+    """Doct strings test"""
     cat_id = None
     likes = 0
 

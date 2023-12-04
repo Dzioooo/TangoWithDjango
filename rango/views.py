@@ -125,7 +125,10 @@ class AddCategoryView(View):
                           {'form': self.form})
         except IntegrityError as e:
             print(f"Integrity Error: {e}")
-            self.form.add_error('name', 'Special Characters not allowed.')
+            if "unique constraint" in str(e).lower():
+                self.form.add_error('name', 'Category with this name already exists.')
+            else:
+                self.form.add_error('name', 'An error occurred.')
             return render(request, self.template_name, {'form': self.form})
 
 

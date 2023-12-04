@@ -1,4 +1,5 @@
 from django import forms
+from django.core.exceptions import ValidationError
 
 from rango.models import Category
 from rango.models import Page
@@ -15,6 +16,14 @@ class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
         fields = ('name',)
+    
+    def clean(self):
+        name = self.cleaned_data['name']
+        print("name", name)
+        if not name.isalnum() or '_' in name:
+            raise ValidationError('Special characters are not allowed.')
+        return name
+
 
 
 class PageForm(forms.ModelForm):
