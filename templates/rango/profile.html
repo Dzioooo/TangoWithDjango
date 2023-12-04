@@ -36,9 +36,9 @@
         <div class="col-lg-6">
             <h4>Created Pages</h4>
             <p>
-                {% if pages %}
+                {% if created_pages %}
                     <ul class="list-group">
-                        {% for page in pages %}
+                        {% for page in created_pages %}
                             <li class="list-group-item">
                                 {{ page.category.name }} -
                                 <a href="{{ page.url }}">{{ page.title }}</a>
