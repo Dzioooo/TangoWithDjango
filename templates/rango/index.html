@@ -26,7 +26,11 @@
                                 <a href="{% url 'show_category' category.slug %}">
                                     {{ category.name }}</a>
                                 <span class="badge badge-pill badge-primary">
-                                    {{ category.likes }} likes
+                                    {% if category.likes > 1 %}
+                                        {{ category.likes }} likes
+                                    {% else %}
+                                        {{ category.likes }} like
+                                    {% endif %}
                                 </span>
                             </li>
                         {% endfor %}
@@ -46,7 +50,11 @@
                             <li class="list-group-item">
                                 <a href="{{ page.url }}">{{ page.title }}</a>
                                 <span class="badge badge-pill badge-primary">
-                                    {{ page.views }} view/s
+                                    {% if page.views > 1 %}
+                                        {{ page.views }} views
+                                    {% else %}
+                                        {{ page.views }} view
+                                    {% endif %} 
                                 </span>
                             </li>
                         {% endfor %}

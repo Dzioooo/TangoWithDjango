@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -25,36 +26,9 @@ from rango.models import UserProfile
 
 
 class IndexView(View):
-    """View for rendering the index.html or index page.
-
-    Retrieves the top five categories based on likes and also the top 
-    five pages based on views. It then renders the 'rango/index.html'
-    template with the obtained objects or data.
-
-    Attributes: None
-
-    Methods: 
-        get(request, *args, **kwargs): GET request for obtaining the
-        top five categories and top five pages and then renders the
-        index.html. 
-    """
-
+    template_name = 'rango/index.html'
+    
     def get(self, request, *args, **kwargs):
-        """Handles the GET request and then renders index.html.
-
-        Gets the top five categories based on likes and top five pages
-        based on views and then renders the index.html.
-
-        Args:
-            request(HttpRequest): HTTP request object
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-        
-        Returns:
-            HttpResponse: Rendered index.html together with the 
-            context_dict variable that holds the data of top categories
-            and top pages.
-        """
         cookie_handler_view = CookieHandlerView()
         cookie_handler_view.visitor_cookie_handler(request)
         category_list = Category.objects.order_by('-likes')[:5]
@@ -66,121 +40,35 @@ class IndexView(View):
         context_dict = {'categories': category_list,
                         'pages': page_list}
 
-        return render(request, 'rango/index.html', context=context_dict)
+        return render(request, self.template_name, context=context_dict)
 
 
 class AboutView(View):
-    """View for rendering the about.html or about page.
-
-    Attributes: None
-
-    Methods: None
-    """
+    template_name = 'rango/about.html'
     def get(self, request, *args, **kwargs):
-        return render(request, 'rango/about.html')
+        return render(request, self.template_name)
 
 
 class ShowCategoryView(View):
-    """View for rendering the category.html or category page.
-
-    Displays the selected category name and then retrieves all pages
-    within the selected category and also has a search function if a
-    user wants to add a page within that category. Lastly, renders the
-    'rango/category.html' templte with the obtained data.
-
-    Attributes:
-        context_dict - dictionary type where it stores all the required
-        data to be rendered on the page
-
-        results - list type where it stores all the search results
-
-    Methods: 
-        get_context_dict(category, pages, results=None): method for
-        storing into the context_dict variable all the required data to 
-        be displayed in category.html
-
-        get_category_and_pages: method for checking the selected
-        category by comparing it with the category_name_slug and if it
-        exists, gets all Page objects and orders it by views.
-
-        get(request, category_name_slug, *args, **kwargs): GET request 
-        for obtaining the selected category by comparing the slug 
-        property to the category_name_slug argument and also obtaining
-        all Page objects that are sorted by the number of views.
-        Lastly, renders the category.html together with the obtianed
-        data.
-
-        post(request, category_name_slug, *args, **kwargs): POST request
-        for performing search within the category stores the data into
-        the results attribute.
-    """
     context_dict = {}
-    results = []
+    template_name = 'rango/category.html'
 
-    def get_context_dict(self, category, pages):
-        """Returns all the required data that should be displayed or
-        rendered to the category.html.
-
-        Args:
-            category: Selected Category object.
-            pages: all objects within the selected category
-        
-        Return/s:
-            Dictionary of required data to be rendered or displayed to
-            the category.html
-        """
-   
-        if self.results:
-            return {
-                'pages': pages,
-                'category': category,
-                'search_results': self.results,
-                'page_title': [page.title for page in pages]
-            }
-        else:
-            return {
-                'pages': pages,
-                'category': category,
-                'query': category.name
-            }
+    def get_context_dict(self, category, pages, results=None):
+        return {
+            'pages': pages,
+            'category': category,
+            'query': category.name,
+            'search_results': results,
+            'page_title': [page.title for page in pages]
+        }
         
     def get_category_and_pages(self, category_name_slug):
-        """Gets the selected category object and Page objects within
-        the selected category.
-
-        Args:
-            category_name_slug: the slug type of the name property of
-            Category class or model.
-        
-        Returns:
-            category: returns the selected Category object.
-            pages: returns the filtered Page objects within the
-            selected category.
-        """
         category = Category.objects.get(slug=category_name_slug)
         pages = Page.objects.filter(category=category).order_by('-views')
 
         return category, pages
 
     def get(self, request, category_name_slug, *args, **kwargs):
-        """Handles the GET request and then renders category.html.
-
-        Gets the selected Category object and filtered Page objects 
-        within the selected category object and then renders the
-        category.html.
-
-        Args:
-            request(HttpRequest): HTTP request object
-            category_name_slug: slug type of the category name
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-        
-        Returns:
-            HttpResponse: Rendered index.html together with the 
-            context_dict variable that holds the selected category, 
-            page objects, and search results.
-        """
-
         try:
             category, pages = self.get_category_and_pages(category_name_slug)
             self.context_dict.update(self.get_context_dict(category, pages))
@@ -188,83 +76,83 @@ class ShowCategoryView(View):
             self.context_dict = {'category': None,
                             'pages': None}
 
-        return render(request, 'rango/category.html', 
-                      context=self.context_dict)
+        return render(request, self.template_name, context=self.context_dict)
 
     def post(self, request, category_name_slug, *args, **kwargs):
-        """Handles the POST request and then renders category.html.
-
-        Gets the selected Category object and then the filtered Page
-        objects within the selected category and also the search
-        results.
-
-        Args:
-            request(HttpRequest): HTTP request object
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-        
-        Returns:
-            HttpResponse: Rendered index.html together with the 
-            context_dict variable that holds the data of top categories
-            and top pages.
-        """
-
         try:
             category, pages = self.get_category_and_pages(category_name_slug)
+            results = []
 
             if 'query' in request.POST:
                 query = request.POST['query'].strip()
 
                 if query:
-                    self.results = run_query(query)
+                    results = run_query(query)
                     self.context_dict['query'] = query
 
-            self.context_dict.update(self.get_context_dict(category, pages))
+            self.context_dict.update(self.get_context_dict(category, pages, 
+                                                           results))
         except Category.DoesNotExist:
             self.context_dict = {'category': None,
                             'pages': None}
 
-        return render(request, 'rango/category.html', 
-                      context=self.context_dict)
+        return render(request, self.template_name, context=self.context_dict)
 
 
 class AddCategoryView(View):
+    template_name = 'rango/add_category.html'
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.form = CategoryForm()
+
     def get(self, request, *args, **kwargs):
         form = CategoryForm()
         context_dict = {'form': form}
-        return render(request, 'rango/add_category.html', context=context_dict)
+        return render(request, self.template_name, context=context_dict)
 
     def post(self, request, *args, **kwargs):
         try:
-            form = CategoryForm(request.POST)
+            self.form = CategoryForm(request.POST)
 
-            if form.is_valid():
-                form.save(commit=True)
+            if self.form.is_valid():
+                self.form.save(commit=True)
                 return redirect('index')
             else:
-                print(form.errors)
+                print(self.form.errors)
 
-            return render(request, 'rango/add_category.html', {'form': form})
+            return render(request, 'rango/add_category.html', 
+                          {'form': self.form})
         except IntegrityError as e:
             print(f"Integrity Error: {e}")
-            form.add_error('name', 'Special Characters not allowed.')
-            return render(request, 'rango/add_category.html', {'form': form})
+            self.form.add_error('name', 'Special Characters not allowed.')
+            return render(request, self.template_name, {'form': self.form})
 
 
 class AddPageView(View):
+    template_name = 'rango/add_page.html'
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.form = PageForm()
+
     def check_category(self, category_name_slug):
         return Category.objects.get(slug=category_name_slug)
+    
+    def create_context_dict(self, category, form):
+        return {'form': form, 'category': category}
 
     def get(self, request, category_name_slug, *args, **kwargs):
         try:
             category = self.check_category(category_name_slug)
-            form = PageForm()
         except Category.DoesNotExist:
             category = None
-            form = None
+            self.form = None
+        
+        self.form = PageForm()
 
-        context_dict = {'form': form, 'category': category}
-        return render(request, 'rango/add_page.html', context=context_dict)
+        context_dict = self.create_context_dict(category, self.form)
+        return render(request, self.template_name, context=context_dict)
 
     def post(self, request, category_name_slug, *args, **kwargs):
         try:
@@ -272,21 +160,21 @@ class AddPageView(View):
         except Category.DoesNotExist:
             category = None
 
-        form = PageForm(request.POST)
+        self.form = PageForm(request.POST)
 
-        if form.is_valid():
+        if self.form.is_valid():
             if category:
-                page = form.save(commit=False)
+                page = self.form.save(commit=False)
                 page.category = category
                 page.views = 0
                 page.likes = 0
                 page.save()
             return redirect('show_category', category_name_slug)
         else:
-            print(form.errors)
+            print(self.form.errors)
 
-        context_dict = {'form': form, 'category': category}
-        return render(request, 'rango/add_page.html', context_dict)
+        context_dict = self.create_context_dict(category, self.form)
+        return render(request, self.template_name, context_dict)
 
 
 @method_decorator(login_required, name='dispatch')
@@ -304,29 +192,43 @@ class UserLogoutView(View):
 
 @method_decorator(login_required, name='dispatch')
 class RegisterProfileView(View):
+    template_name = 'rango/profile_registration.html'
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.form = UserProfileForm()
+
     def get(self, request, *args, **kwargs):
-        form = UserProfileForm()
-        context_dict = {'form': form}
-        return render(request, 'rango/profile_registration.html', context_dict)
+        self.form = UserProfileForm()
+        context_dict = {'form': self.form}
+        return render(request, self.template_name, context_dict)
 
     def post(self, request, *args, **kwargs):
-        form = UserProfileForm(request.POST, request.FILES)
+        self.form = UserProfileForm(request.POST, request.FILES)
 
-        if form.is_valid():
-            user_profile = form.save(commit=False)
+        if self.form.is_valid():
+            user_profile = self.form.save(commit=False)
             user_profile.user = request.user
             user_profile.save()
 
             return redirect('index')
         else:
-            print(form.errors)
+            print(self.form.errors)
 
-        context_dict = {'form': form}
-        return render(request, 'rango/profile_registration.html', context_dict)
+        context_dict = {'form': self.form}
+        return render(request, self.template_name, context_dict)
 
 
 @method_decorator(login_required, name='dispatch')
 class ProfileView(View):
+    user = None
+    userprofile = None
+    template_name = 'rango/profile.html'
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.form = UserProfileForm()
+
     def get_user(self, username):
         user = User.objects.get(username=username)
         userprofile = UserProfile.objects.get_or_create(user=user)[0]
@@ -334,14 +236,15 @@ class ProfileView(View):
         return user, userprofile
 
     def get_context_dict(self, user, userprofile):
-        form = UserProfileForm({
-                'website': userprofile.website,
-                'picture': userprofile.picture
-            })
+        initial_values = {
+        'website': userprofile.website,
+        'picture': userprofile.picture
+        }
+        self.form = UserProfileForm(initial=initial_values)
         return {
             'userprofile': userprofile,
             'selecteduser': user,
-            'form': form,
+            'form': self.form,
             'categories': userprofile.liked_categories.all(),
             'created_pages': Page.objects.filter(added_by=userprofile.user)
         }
@@ -349,28 +252,30 @@ class ProfileView(View):
     def get(self, request, username, *args, **kwargs):
         try:
             context_dict = {}
-            user, userprofile = self.get_user(username)
+            self.user, self.userprofile = self.get_user(username)
 
-            context_dict.update(self.get_context_dict(user, userprofile))
-            return render(request, 'rango/profile.html', context=context_dict)
+            context_dict.update(self.get_context_dict(self.user, 
+                                                      self.userprofile))
+            return render(request, self.template_name, context=context_dict)
         except User.DoesNotExist:
             return redirect('index')
 
     def post(self, request, username, *args, **kwargs):
         try:
             context_dict = {}
-            user, userprofile = self.get_user(username)
+            self.user, self.userprofile = self.get_user(username)
 
-            form = UserProfileForm(request.POST, request.FILES,
-                                   instance=userprofile)
+            self.form = UserProfileForm(request.POST, request.FILES,
+                                   instance=self.userprofile)
 
-            if form.is_valid():
-                form.save(commit=True)
-                context_dict.update(self.get_context_dict(user, userprofile))
-                return redirect('profile', user.username)
+            if self.form.is_valid():
+                self.form.save(commit=True)
+                context_dict.update(self.get_context_dict(self.user, 
+                                                          self.userprofile))
+                return redirect('profile', self.user.username)
             else:
-                print(form.errors)
-            return render(request, 'rango/profile.html', context=context_dict)
+                print(self.form.errors)
+            return render(request, self.template_name, context=context_dict)
         except User.DoesNotExist:
             return redirect('index')
 
