@@ -15,4 +15,5 @@ urlpatterns = [
     path('accounts/login/', views.UserLoginView.as_view(), 
          name='custom_login'),
     path('accounts/', include('registration.backends.simple.urls')),
+    path('api/', include('rango.api.v1.urls'))
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
