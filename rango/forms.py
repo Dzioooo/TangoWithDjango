@@ -9,6 +9,21 @@ from rango.models import UserProfile
 
 
 class CategoryForm(forms.ModelForm):
+    """
+    Form for creating or updating a category.
+
+    Attribtues:
+        name (CharField): the name of the category.
+
+        views (IntegerField): the number of views for the category,
+        default value is zero and it is a hidden field.
+
+        likes (IntegerField): the number of likes for the category,
+        default value is zero and it is a hidden field.
+
+        slug (CharField): the slug type of the category name, it is a
+        hidden field.
+    """
     name = forms.CharField(max_length=128, help_text='Category Name:')
     views = forms.IntegerField(widget=forms.HiddenInput(), initial=0)
     likes = forms.IntegerField(widget=forms.HiddenInput(), initial=0)
@@ -17,8 +32,21 @@ class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
         fields = ('name',)
-    
+
     def clean_name(self):
+        """
+        Category name validation.
+
+        It checks if the category name contains any special characters,
+        if it contains a special character, it will prompt or display
+        the error message.
+
+        Returns:
+            name (str): the category name.
+
+        Raises:
+            ValidationError: if the name contains special characters.
+        """
         name = self.cleaned_data.get('name')
         if not re.match(r'^[a-zA-Z0-9\s.]*$', name):
             raise ValidationError('Only alphanumeric characters and '
@@ -27,6 +55,16 @@ class CategoryForm(forms.ModelForm):
 
 
 class PageForm(forms.ModelForm):
+    """
+    Form for creating or updating a page.
+
+    Attributes:
+        title (CharField): the title of the page.
+
+        url (URLField): the URL of the page.
+
+        views (IntegerField): the views of the page.
+    """
     title = forms.CharField(max_length=128, help_text='Please enter the title'
                             ' of the page.')
     url = forms.URLField(max_length=200, help_text='Please enter the url of '
@@ -34,6 +72,12 @@ class PageForm(forms.ModelForm):
     views = forms.IntegerField(widget=forms.HiddenInput(), initial=0)
 
     def clean_url(self):
+        """
+        Cleans and validates the URL field.
+
+        Returns:
+            url (str): The cleaned url value.
+        """
         url = self.cleaned_data.get('url')
 
         if url and not url.startswith('http://'):
@@ -47,10 +91,24 @@ class PageForm(forms.ModelForm):
 
 
 class UserProfileForm(forms.ModelForm):
+    """
+    Form for creating or updating a user profile.
+
+    Attributes:
+        website (URLField): the user's website URL.
+
+        picture (ImageField): the user's profile picture.
+    """
     website = forms.URLField(required=False, widget=forms.TextInput)
     picture = forms.ImageField(required=False)
 
-    def clearn_website(self):
+    def clean_website(self):
+        """
+        Cleans and validates the URL field.
+
+        Returns:
+            website (str): The cleaned url value.
+        """
         website = self.cleaned_data.get('website')
 
         if website and not website.startswith('http://'):

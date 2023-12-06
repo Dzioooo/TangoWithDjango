@@ -21,7 +21,7 @@ urlpatterns = [
          name='profile'),
     path('profiles/', views.ListProfilesView.as_view(), name='list_profiles'),
     path('like/', views_ajax.LikeCategoryView.as_view(), name='like_category'),
-    path('suggest/', views_ajax.CategorySearchView.as_view(), 
+    path('suggest/', views_ajax.CategorySearchView.as_view(),
          name='suggest_category'),
     path('add/', views_ajax.AutoAddPageView.as_view(), name='auto_add_page'),
 ]

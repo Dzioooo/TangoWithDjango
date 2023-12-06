@@ -18,7 +18,7 @@ from registration.backends.simple.views import RegistrationView
 from rango.forms import CategoryForm
 from rango.forms import PageForm
 from rango.forms import UserProfileForm
-from rango.google_search import run_query
+from rango.google_search import CustomSearch
 from rango.models import Category
 from rango.models import Page
 from rango.models import UserProfile
@@ -33,7 +33,7 @@ class IndexView(View):
         template_name (str): contains the name of the template.
     """
     template_name = 'rango/index.html'
-    
+
     def get(self, request, *args, **kwargs):
         """
         GET request for the Index View.
@@ -44,7 +44,7 @@ class IndexView(View):
 
         Args:
             request (HttpRequest): The request object.
-        
+
         Returns:
             HttpResponse: Rendered response with the template and
             context.
@@ -77,7 +77,7 @@ class AboutView(View):
 
         Args:
             None
-        
+
         Returns:
             None
         """
@@ -89,10 +89,10 @@ class ShowCategoryView(View):
     View for displaying a cateogry and its associated pages.
 
     Attributes:
-        context_dict (dict): stores all context data that will be 
+        context_dict (dict): stores all context data that will be
         displayed on the rendered template.
 
-        template_name (str): A string type which contains the name of 
+        template_name (str): A string type which contains the name of
         the template.
     """
     context_dict = {}
@@ -111,9 +111,9 @@ class ShowCategoryView(View):
 
             results (List): List of search results from the run_query
             function.
-        
+
         Returns:
-            dict (dict): The context dictionary containing the data 
+            dict (dict): The context dictionary containing the data
             which will be then rendered to the template.
         """
         return {
@@ -123,7 +123,7 @@ class ShowCategoryView(View):
             'search_results': results,
             'page_title': [page.title for page in pages]
         }
-        
+
     def get_category_and_pages(self, category_name_slug):
         """
         Checks if the selected category exists and then retrieves all
@@ -132,7 +132,7 @@ class ShowCategoryView(View):
 
         Args:
             category_name_slug (str): slug of the category name.
-        
+
         Returns:
             category (Category): the selected category object.
 
@@ -144,7 +144,7 @@ class ShowCategoryView(View):
         except Category.DoesNotExist:
             category = None
             pages = None
-        
+
         pages = Page.objects.filter(category=category).order_by('-views')
 
         return category, pages
@@ -158,7 +158,7 @@ class ShowCategoryView(View):
             request (HttpRequest): request object.
             category_name_slug: the slug type of the selected category
             name.
-        
+
         Returns:
             HttpResponse: Rendered response with the template and
             context.
@@ -177,7 +177,7 @@ class ShowCategoryView(View):
             request (HttpRequest): request object.
             category_name_slug: the slug type of the selected category
             name.
-        
+
         Returns:
             HttpResponse: Rendered response with the template and
             updated 'results' key of the context.
@@ -190,10 +190,11 @@ class ShowCategoryView(View):
             query = request.POST['query'].strip()
 
             if query:
-                results = run_query(query)
+                search = CustomSearch()
+                results = search.run_query(query)
                 self.context_dict['query'] = query
 
-        self.context_dict.update(self.get_context_dict(category, pages, 
+        self.context_dict.update(self.get_context_dict(category, pages,
                                                         results))
 
         return render(request, self.template_name, context=self.context_dict)
@@ -233,7 +234,7 @@ class AddCategoryView(View):
 
         Args:
             request(HttpRequest): request object.
-        
+
         Returns:
             HttpResponse: rendered response with the add category form.
         """
@@ -251,7 +252,7 @@ class AddCategoryView(View):
 
         Args:
             request(HttpRequest): The request object.
-        
+
         Returns:
             HttpResponse: Rendered response based on the form
             validation result.
@@ -265,7 +266,7 @@ class AddCategoryView(View):
             print("form error")
             print(self.form.errors)
 
-        return render(request, 'rango/add_category.html', 
+        return render(request, 'rango/add_category.html',
                         {'form': self.form})
 
 
@@ -303,9 +304,9 @@ class AddPageView(View):
         Args:
             category_name_slug (str): The slug type of the category
             name.
-        
+
         Returns:
-            category (Category): category object if category_name_slug 
+            category (Category): category object if category_name_slug
             exists, if it does not exist, it returns None.
 
             form (PageForm): page form object if category_name_slug
@@ -318,7 +319,7 @@ class AddPageView(View):
             self.form = None
 
         return category
-    
+
     def create_context_dict(self, category, form):
         """
         Create a context dictionary for the context data in rendering
@@ -329,8 +330,8 @@ class AddPageView(View):
             the page.
 
             form (PageForm): form for adding pages.
-        
-        Returns: 
+
+        Returns:
             dict: context dictionary which contains data or information
             for rendering the template.
         """
@@ -344,7 +345,7 @@ class AddPageView(View):
             request (HttpRequest): the request object.
 
             category_name_slug (str): slug type of the category name.
-        
+
         Returns:
             HttpResponse: rendered response with the add page form.
         """
@@ -367,7 +368,7 @@ class AddPageView(View):
 
             category_name_slug (str): the slug type of the category
             name.
-        
+
         Returns:
             HttpResponse: Rendered response based on the form
             validation results.
@@ -411,7 +412,7 @@ class UserLogoutView(View):
 
         Args:
             request (HttpRequest): the request object.
-        
+
         Returns:
             HttpResponseRedirect: redirects to the index page after
             logging out the user.
@@ -457,7 +458,7 @@ class RegisterProfileView(View):
 
         Arrgs:
             request (HttpRequest): the request object.
-        
+
         Returns:
             HttpResponse: rendered response with the user profile
             registration form.
@@ -472,12 +473,12 @@ class RegisterProfileView(View):
 
         Associates the user profile with the current logged in user and
         then redirects it to the index page if the form is valid. If
-        the form is not valid, it prints and renders the errors and 
+        the form is not valid, it prints and renders the errors and
         also the user profiek registration form with errors.
 
         Args:
             request (HttpRequest): the request object.
-        
+
         Returns:
             HttpResponse: rendered response based on the form
             vlidation result.
@@ -506,7 +507,7 @@ class ProfileView(View):
         template_name (str): The name of the template used for
         the view.
 
-        user (User): instance of the User model used for getting the 
+        user (User): instance of the User model used for getting the
         user's profile.
 
         userprofile (UserProfile): instance of the UserProfile model
@@ -539,9 +540,9 @@ class ProfileView(View):
 
         Args:
             username: the logged in user's username.
-        
+
         Returns:
-            user (User): an instance of the User class if the user 
+            user (User): an instance of the User class if the user
             exists, if the user does not exist, it returns None.
 
             userprofile (UserProfile): an instance of the UserProfile
@@ -559,7 +560,7 @@ class ProfileView(View):
         self.userprofile = UserProfile.objects.get_or_create(user=self.user)[0]
 
         return self.user, self.userprofile
-        
+
     def get_context_dict(self):
         """
         Generates a context dictionary for rendering the template.
@@ -573,9 +574,9 @@ class ProfileView(View):
 
             results (List): List of search results from the run_query
             function.
-        
+
         Returns:
-            dict (dict): The context dictionary containing the data 
+            dict (dict): The context dictionary containing the data
             which will be then rendered to the template.
         """
         initial_values = {
@@ -600,7 +601,7 @@ class ProfileView(View):
             request (HttpRequest): the request object.
 
             username (str): the username of the logged in user.
-        
+
         Returns:
             HttpResponse: rendered response with the user's profile
             data.
@@ -628,7 +629,7 @@ class ProfileView(View):
             username (str): the username of the logged in user.
 
         Returns:
-            HttpResponse: rendered response based on the form 
+            HttpResponse: rendered response based on the form
             validation result.
         """
         try:
@@ -693,7 +694,7 @@ class UserLoginView(LoginView):
 
         Args:
             request (HttpRequest): the request object.
-        
+
         Returns:
             HttpResponse: Rendered resposne based on form validation
             result.
@@ -713,7 +714,7 @@ class UserLoginView(LoginView):
 
         Args:
             form (AuthenticationForm): invalid login form.
-        
+
         Returns:
             HttpResponse: Rendered response with error message and
             login form.
@@ -723,7 +724,7 @@ class UserLoginView(LoginView):
 
 class CookieHandlerView(View):
     """
-    View for handling cookies, specifically for tracking visitor 
+    View for handling cookies, specifically for tracking visitor
     information.
 
     Attributes:
@@ -736,7 +737,7 @@ class CookieHandlerView(View):
         Args:
             request (HttpRequest): The request object.
             cookie (str): The name of the cookie.
-            default_val: The default value to return if the cookie is 
+            default_val: The default value to return if the cookie is
             not found.
 
         Returns:
@@ -747,7 +748,7 @@ class CookieHandlerView(View):
         if not val:
             val = default_val
         return val
-    
+
     def visitor_cookie_handler(self, request):
         """
         Handle visitor cookie tracking.
@@ -780,7 +781,7 @@ class TrackUrlView(View):
 
     Attributes:
         page_id (int): The ID of the page to track.
-        url (str): The default URL to redirect to if the page ID is not 
+        url (str): The default URL to redirect to if the page ID is not
         found.
     """
     page_id = None
@@ -788,10 +789,10 @@ class TrackUrlView(View):
 
     def get(self, request, *args, **kwargs):
         """
-        Handles GET requests for tracking and updating the view count 
+        Handles GET requests for tracking and updating the view count
         of a page.
 
-        Retrieves the page ID from the request, updates the page's view 
+        Retrieves the page ID from the request, updates the page's view
         count, and redirects to the page's URL.
 
         Args:
@@ -824,7 +825,7 @@ class ListProfilesView(View):
         """
         Handles GET requests for listing user profiles.
 
-        Retrieves all user profiles and renders the list_profiles.html 
+        Retrieves all user profiles and renders the list_profiles.html
         template with the user profile list.
 
         Args:
