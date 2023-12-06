@@ -14,7 +14,6 @@ urlpatterns = [
          views.AddPageView.as_view(),
          name='add_page'),
     path('logout/', views.UserLogoutView.as_view(), name='logout'),
-    path('restricted/', views.RestrictedView.as_view(), name='restricted'),
     path('goto/', views.TrackUrlView.as_view(), name='goto'),
     path('register_profile/', views.RegisterProfileView.as_view(),
          name='register_profile'),

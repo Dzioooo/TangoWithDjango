@@ -1,3 +1,5 @@
+import re
+
 from django import forms
 from django.core.exceptions import ValidationError
 
@@ -7,8 +9,7 @@ from rango.models import UserProfile
 
 
 class CategoryForm(forms.ModelForm):
-    name = forms.CharField(max_length=128, help_text='Please enter the '
-                           'category name.\n')
+    name = forms.CharField(max_length=128, help_text='Category Name:')
     views = forms.IntegerField(widget=forms.HiddenInput(), initial=0)
     likes = forms.IntegerField(widget=forms.HiddenInput(), initial=0)
     slug = forms.CharField(widget=forms.HiddenInput(), required=False)
@@ -17,13 +18,12 @@ class CategoryForm(forms.ModelForm):
         model = Category
         fields = ('name',)
     
-    def clean(self):
-        name = self.cleaned_data['name']
-        print("name", name)
-        if not name.isalnum() or '_' in name:
-            raise ValidationError('Special characters are not allowed.')
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if not re.match(r'^[a-zA-Z0-9\s.]*$', name):
+            raise ValidationError('Only alphanumeric characters and '
+                                  'whitespace are allowed.')
         return name
-
 
 
 class PageForm(forms.ModelForm):
@@ -33,15 +33,13 @@ class PageForm(forms.ModelForm):
                          'the page', widget=forms.TextInput)
     views = forms.IntegerField(widget=forms.HiddenInput(), initial=0)
 
-    def clean(self):
-        cleaned_data = self.cleaned_data
-        url = cleaned_data.get('url')
+    def clean_url(self):
+        url = self.cleaned_data.get('url')
 
         if url and not url.startswith('http://'):
             url = 'http://' + url
-            cleaned_data['url'] = url
 
-            return cleaned_data
+        return url
 
     class Meta:
         model = Page
@@ -52,15 +50,13 @@ class UserProfileForm(forms.ModelForm):
     website = forms.URLField(required=False, widget=forms.TextInput)
     picture = forms.ImageField(required=False)
 
-    def clean(self):
-        cleaned_data = self.cleaned_data
-        url = cleaned_data.get('url')
+    def clearn_website(self):
+        website = self.cleaned_data.get('website')
 
-        if url and not url.startswith('http://'):
-            url = 'http://' + url
-            cleaned_data['url'] = url
+        if website and not website.startswith('http://'):
+            website = 'http://' + website
 
-            return cleaned_data
+        return website
 
     class Meta:
         model = UserProfile
